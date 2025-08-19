@@ -355,6 +355,7 @@ class BillboardEnv(AECEnv):
         self._agent_selector = agent_selector([])
         self.agent_selection: str = ""
         self.placement_history: List[Dict[str, Any]] = []
+        self.current_ad_for_na_mode: Optional[Ad] = None
         self.performance_metrics = {
             'total_ads_processed': 0,
             'total_ads_completed': 0,
@@ -426,16 +427,16 @@ class BillboardEnv(AECEnv):
             obs['ad_features'] = ad_features
 
         # Add current ad for NA mode
-        if self.action_mode == 'na':
+        elif self.action_mode == 'na':
             active_ads = [ad for ad in self.ads if ad.state == 0]
             if active_ads:
-                current_ad = random.choice(active_ads)
-                obs['current_ad'] = current_ad.get_feature_vector()
+                self.current_ad_for_na_mode = random.choice(active_ads)
+                obs['current_ad'] = self.current_ad_for_na_mode.get_feature_vector()
             else:
+                self.current_ad_for_na_mode = None
                 obs['current_ad'] = np.zeros(self.n_ad_features, dtype=np.float32)
-
         return obs
-
+    
     def _calculate_influence_for_ad_set(self, ad: Ad) -> float:
         """Calculate influence using exact problem formulation.
 
@@ -602,27 +603,19 @@ class BillboardEnv(AECEnv):
             # Node Action: environment-selected ad to agent-selected billboard(s)
             active_ads = [ad for ad in self.ads if ad.state == 0]
 
-            # Action is now expected to be a MultiBinary vector of shape (n_nodes,)
-            if active_ads and isinstance(action, (list, np.ndarray)):
-                ad_to_assign = random.choice(active_ads)  # Environment still chooses ad
-
+            # Action is now expected to be a MultiBinary vector of shape (n_nodes,)                                       
+            ad_to_assign = self.current_ad_for_na_mode
+            if ad_to_assign and isinstance(action, (list, np.ndarray)):
                 for bb_idx, chosen in enumerate(action):
                     if chosen == 1 and self.billboards[bb_idx].is_free():
                         duration = random.randint(*self.slot_duration_range)
-
-                        # Assign billboard to ad
                         billboard = self.billboards[bb_idx]
                         billboard.assign(ad_to_assign.aid, duration)
                         ad_to_assign.assign_billboard(billboard.b_id)
-
-                        # Record placement
                         self.placement_history.append({
-                            'spawn_step': ad_to_assign.spawn_step,
-                            'allocated_step': self.current_step,
-                            'ad_id': ad_to_assign.aid,
-                            'billboard_id': billboard.b_id,
-                            'duration': duration,
-                            'demand': ad_to_assign.demand
+                            'spawn_step': ad_to_assign.spawn_step, 'allocated_step': self.current_step,
+                            'ad_id': ad_to_assign.aid, 'billboard_id': billboard.b_id,
+                            'duration': duration, 'demand': ad_to_assign.demand
                         })
 
                         if self.debug:
