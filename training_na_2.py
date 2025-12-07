@@ -21,9 +21,8 @@ from optimized_env import OptimizedBillboardEnv, EnvConfig
 from models import BillboardAllocatorGNN
 
 
-# =============================================================================
 # WRAPPER: Returns observations WITHOUT graph_edge_links
-# =============================================================================
+
 
 class NoGraphObsWrapper(gym.Env):
     """
@@ -94,9 +93,7 @@ class NoGraphObsWrapper(gym.Env):
     def edge_index(self): return self.env.edge_index
 
 
-# =============================================================================
 # MODEL WRAPPER: Stores graph internally, injects during forward
-# =============================================================================
 
 class GraphAwareActor(torch.nn.Module):
     """
@@ -203,9 +200,9 @@ class GraphAwareCritic(torch.nn.Module):
             return new_obs
 
 
-# =============================================================================
+
 # CONFIGURATION
-# =============================================================================
+
 
 env_config = {
     "billboard_csv": r"C:\Coding Files\DynamicBillboard\env\BillBoard_NYC.csv",
@@ -266,9 +263,7 @@ def get_env():
     return wrapped
 
 
-# =============================================================================
 # MAIN TRAINING
-# =============================================================================
 
 def main():
     global GRAPH_NUMPY
