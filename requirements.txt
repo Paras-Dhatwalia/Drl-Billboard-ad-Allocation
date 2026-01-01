@@ -1,0 +1,15 @@
+torch-geometric>=2.4
+
+tianshou>=1.2.0
+pettingzoo>=1.24.3
+gymnasium>=0.28.1
+
+numpy
+scipy
+pandas
+networkx
+
+tensorboard
+psutil
+matplotlib
+seaborn
